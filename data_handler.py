@@ -4,40 +4,45 @@ class DataHandler:
     Handles file uploading, demo data generation, template creation,
     and loading data into a Pandas DataFrame.
     """
-    def handle_upload_and_demo(self):
+    def handle_upload_and_demo(self, st_module=None, datetime_module=None, timedelta_module=None, random_module=None, pd_module=None, io_module=None):
         """
         Manages file uploading from the user and provides an option to use demo data.
         It also offers a template file for download.
         Returns:
             An uploaded file object (from Streamlit uploader) or an in-memory BytesIO buffer (for demo data).
         """
-        # streamlit, io, random, datetime, timedelta, pd are now expected to be imported in the main app
-        # and thus available in the global scope when these methods are called.
-        # This is generally not a recommended practice for larger applications.
-        st.sidebar.subheader("📁 Upload your data")
-        uploaded_file = st.sidebar.file_uploader("Upload your Excel file", type=["xlsx"], key="upload_gym")
+        # Fallback imports if modules are not passed (less ideal but makes it runnable standalone for testing)
+        if st_module is None: import streamlit as st_module
+        if datetime_module is None: from datetime import datetime as datetime_module
+        if timedelta_module is None: from datetime import timedelta as timedelta_module
+        if random_module is None: import random as random_module
+        if pd_module is None: import pandas as pd_module
+        if io_module is None: import io as io_module
 
-        if st.sidebar.button("✨ Use Demo Data", key="demo_gym"):
-            demo_buf = self._create_demo_data(datetime, timedelta, random, pd, io)
-            st.session_state['demo_data_buffer'] = demo_buf
-            st.session_state['use_demo_data'] = True
-            st.success("✅ Realistic demo data loaded successfully")
-        self._create_template(datetime, pd, io)
+        st_module.sidebar.subheader("📁 Upload your data")
+        uploaded_file = st_module.sidebar.file_uploader("Upload your Excel file", type=["xlsx"], key="upload_gym")
 
-        if st.session_state.get('use_demo_data'):
-            return st.session_state.get('demo_data_buffer')
+        if st_module.sidebar.button("✨ Use Demo Data", key="demo_gym"):
+            demo_buf = self._create_demo_data(datetime_module, timedelta_module, random_module, pd_module, io_module, st_module)
+            st_module.session_state['demo_data_buffer'] = demo_buf
+            st_module.session_state['use_demo_data'] = True
+            st_module.success("✅ Realistic demo data loaded successfully")
+        self._create_template(datetime_module, pd_module, io_module, st_module)
+
+        if st_module.session_state.get('use_demo_data'):
+            return st_module.session_state.get('demo_data_buffer')
 
         return uploaded_file
 
     # Pass necessary modules as arguments if they are no longer imported directly
-    def _create_demo_data(self, datetime_module, timedelta_module, random_module, pd_module, io_module):
+    def _create_demo_data(self, datetime_module, timedelta_module, random_module, pd_module, io_module, st_module=None):
         """Creates a realistic in-memory demo DataFrame and returns it as a BytesIO buffer."""
         num_days = 30
         base_date = datetime_module.now() - timedelta_module(days=num_days)
         records = []
 
         for i in range(num_days):
-            current_date = base_date + timedelta(days=i)
+            current_date = base_date + timedelta_module(days=i)
             weekday = current_date.weekday()
             for hour in range(6, 22):
                 if weekday < 5:  # Weekdays
@@ -108,11 +113,12 @@ class DataHandler:
         demo_buf.seek(0)
 
         # Download button for generated demo data (appears only if demo data is used)
-        # st will be available from the main app's import
-        if 'demo_data_buffer' in st.session_state and st.session_state.get('use_demo_data', False):
-             st.sidebar.download_button(
+        if st_module is None: import streamlit as st_module # Fallback
+
+        if 'demo_data_buffer' in st_module.session_state and st_module.session_state.get('use_demo_data', False):
+             st_module.sidebar.download_button( # Changed st to st_module
                 label="📥 Download Current Demo Data",
-                data=st.session_state['demo_data_buffer'],
+                data=st_module.session_state['demo_data_buffer'], # Changed st to st_module
                 file_name="current_gym_demo_data.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 key="download_current_demo"
@@ -120,7 +126,7 @@ class DataHandler:
 
         return demo_buf
 
-    def _create_template(self, datetime_module, pd_module, io_module):
+    def _create_template(self, datetime_module, pd_module, io_module, st_module=None):
         """Creates a sample DataFrame for the template and provides a download button."""
         df_template = pd_module.DataFrame({
             'Date': [datetime_module.now()],
@@ -138,15 +144,16 @@ class DataHandler:
             df_template.to_excel(writer, sheet_name='Sheet1', index=False) # Added sheet_name
         template_buf.seek(0)
 
-        # st will be available from the main app's import
-        st.sidebar.download_button(
+        if st_module is None: import streamlit as st_module # Fallback
+
+        st_module.sidebar.download_button(
             label="⬇️ Download Template",
             data=template_buf,
             file_name="gym_template.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-    def load_data(self, file_object, pd_module=None): # pd_module for consistency, though could be global
+    def load_data(self, file_object, pd_module=None, st_module=None):
         """
         Loads data from a file-like object (uploaded file or BytesIO buffer)
         into a Pandas DataFrame.
@@ -157,9 +164,9 @@ class DataHandler:
         """
         if pd_module is None: # Fallback if not passed, relying on global import from main
             import pandas as pd_module
+        if st_module is None: import streamlit as st_module # Fallback for error display
         try:
             return pd_module.read_excel(file_object, sheet_name=0, engine='openpyxl')
         except Exception as e:
-            # st will be available from the main app's import
-            st.error(f"❌ Failed to load Excel file: {e}")
+            st_module.error(f"❌ Failed to load Excel file: {e}")
             return None

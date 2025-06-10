@@ -4,7 +4,7 @@ class DataProcessor:
     Handles data preprocessing and calculation of key metrics
     for the dashboard and AI insights.
     """
-    def process_and_calculate_metrics(self, df, pd_module=None): # pd_module for consistency
+    def process_and_calculate_metrics(self, df, pd_module=None, st_module=None):
         """
         Performs data preprocessing and calculates metrics.
         Args:
@@ -15,6 +15,7 @@ class DataProcessor:
         """
         if pd_module is None: # Fallback if not passed
             import pandas as pd_module
+        if st_module is None: import streamlit as st_module # Fallback for error display
         try:
             # --- Data Preprocessing ---
             df['Date'] = pd_module.to_datetime(df['Date'])
@@ -82,6 +83,5 @@ class DataProcessor:
             return df, metrics
 
         except Exception as e:
-            import streamlit as st # Import st here to avoid circular dependency if not needed elsewhere
-            st.error(f"❌ Error during data processing: {e}")
+            st_module.error(f"❌ Error during data processing: {e}")
             return None, None

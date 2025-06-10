@@ -66,7 +66,15 @@ def main():
         dashboard_renderer = DashboardRenderer()
 
         # Sidebar elements for data upload/demo
-        uploaded_file_or_buffer = data_handler.handle_upload_and_demo()
+        uploaded_file_or_buffer = data_handler.handle_upload_and_demo(
+            st_module=st,
+            datetime_module=datetime,
+            timedelta_module=timedelta,
+            random_module=random,
+            pd_module=pd,
+            io_module=io
+        )
+
 
         final_df = None
         final_metrics = None
@@ -74,17 +82,28 @@ def main():
 
         if uploaded_file_or_buffer:
             data_load_attempted = True
-            df = data_handler.load_data(uploaded_file_or_buffer)
+            df = data_handler.load_data(uploaded_file_or_buffer, pd_module=pd, st_module=st)
             if df is not None:
-                processed_df, metrics = data_processor.process_and_calculate_metrics(df)
+                processed_df, metrics = data_processor.process_and_calculate_metrics(df, pd_module=pd, st_module=st)
                 if processed_df is not None:
                     final_df = processed_df
                     final_metrics = metrics
+                    # When new data is successfully loaded and processed,
+                    # reset the current AI suggestion to force a new one.
+                    if 'current_ai_suggestion' in st.session_state:
+                        st.session_state.current_ai_suggestion = None
         
         # Always render the dashboard structure (title will show)
         # Charts and AI insights will adapt based on final_df and final_metrics
-        dashboard_renderer.render(final_df, final_metrics)
-
+        dashboard_renderer.render(
+            final_df, 
+            final_metrics,
+            st_module=st,
+            pd_module=pd,
+            px_module=px,
+            random_module=random
+        )
+        
         # Provide contextual messages if data isn't fully loaded/processed
         if final_df is None:
             if data_load_attempted: # User tried to load data, but it failed at some stage

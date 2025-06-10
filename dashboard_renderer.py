@@ -14,7 +14,7 @@ class DashboardRenderer:
             df: The processed Pandas DataFrame.
             metrics: A dictionary containing key performance indicators.
         """
-        self._render_title()
+        self._render_title(st_module)
         self._render_ai_insights(df, metrics, st_module, random_module)
         if st_module: # Check if st_module is provided
             st_module.markdown("---") # Add a horizontal rule for separation
@@ -38,30 +38,32 @@ class DashboardRenderer:
         all_ai_suggestions = self.ai_engine.generate_suggestions(df, metrics)
 
         # Initialize session state for AI suggestions
-        if 'current_ai_suggestion' not in st.session_state or st.session_state.current_ai_suggestion is None:
+        # Use st_module for session_state
+        if st_module is None: import streamlit as st_module # Fallback
+
+        if 'current_ai_suggestion' not in st_module.session_state or st_module.session_state.current_ai_suggestion is None:
             if all_ai_suggestions:
-                st.session_state.current_ai_suggestion = random.choice(all_ai_suggestions)
                 # Ensure random is available
                 if random_module:
-                    st.session_state.current_ai_suggestion = random_module.choice(all_ai_suggestions)
+                    st_module.session_state.current_ai_suggestion = random_module.choice(all_ai_suggestions)
                 else: # Fallback
                     import random as random_module
-                    st.session_state.current_ai_suggestion = random_module.choice(all_ai_suggestions)
+                    st_module.session_state.current_ai_suggestion = random_module.choice(all_ai_suggestions)
                 # Check if current_ai_suggestion is in the list before finding index
-                if st.session_state.current_ai_suggestion in all_ai_suggestions:
-                    st.session_state.last_suggestion_index = all_ai_suggestions.index(st.session_state.current_ai_suggestion)
+                if st_module.session_state.current_ai_suggestion in all_ai_suggestions:
+                    st_module.session_state.last_suggestion_index = all_ai_suggestions.index(st_module.session_state.current_ai_suggestion)
                 else: # Should not happen if random.choice worked from the list
-                    st.session_state.last_suggestion_index = -1
+                    st_module.session_state.last_suggestion_index = -1
             else:
-                st.session_state.current_ai_suggestion = "No specific AI insights available at this moment. Analyzing data..."
-                st.session_state.last_suggestion_index = -1
+                st_module.session_state.current_ai_suggestion = "No specific AI insights available at this moment. Analyzing data..."
+                st_module.session_state.last_suggestion_index = -1
 
         # Display the current insight
         st_markdown_content = f"""
             <div style='background-color: rgba(0,0,0,0.7); padding: 1.5em; border-radius: 15px; margin-bottom: 1em; box-shadow: 0 4px 15px rgba(0,123,255,0.3);'>
                 <h3 style='color: #00BFFF; text-align: center; margin-bottom: 0.75em; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;'>🚀 AI Co-Pilot Insights</h3>
                 <div style='color: #E0E0E0; font-size: 1.05em; min-height: 120px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 15px; border: 1px dashed #007bff; border-radius: 8px; background-color: rgba(20,30,40,0.5); font-family: "Consolas", "Courier New", monospace;'>
-                    {st.session_state.current_ai_suggestion}
+                    {st_module.session_state.current_ai_suggestion}
                 </div>
             </div>
         """
@@ -69,19 +71,19 @@ class DashboardRenderer:
         if st_module:
             st_module.markdown(st_markdown_content, unsafe_allow_html=True)
         else: # Fallback
-            import streamlit as st
-            st.markdown(st_markdown_content, unsafe_allow_html=True)
+            import streamlit as st_fallback_markdown
+            st_fallback_markdown.markdown(st_markdown_content, unsafe_allow_html=True)
 
         # Button to get a new suggestion
-        if st.button("🔮 Unveil New AI Perspective", key="next_insight_button", help="Click to consult the AI for a fresh strategic viewpoint!", use_container_width=True):
+        if st_module.button("🔮 Unveil New AI Perspective", key="next_insight_button", help="Click to consult the AI for a fresh strategic viewpoint!", use_container_width=True):
             if all_ai_suggestions and len(all_ai_suggestions) > 1:
                 available_indices = list(range(len(all_ai_suggestions)))
                 # Try not to repeat the immediately previous suggestion if possible
-                if st.session_state.last_suggestion_index in available_indices:
-                     available_indices.remove(st.session_state.last_suggestion_index)
+                if st_module.session_state.last_suggestion_index in available_indices:
+                     available_indices.remove(st_module.session_state.last_suggestion_index)
 
                 if not available_indices: # Fallback if only one suggestion or after removing last one
-                     new_index = st.session_state.last_suggestion_index if st.session_state.last_suggestion_index != -1 else 0
+                     new_index = st_module.session_state.last_suggestion_index if st_module.session_state.last_suggestion_index != -1 else 0
                 else:
                     # Ensure random is available
                     if random_module:
@@ -90,20 +92,18 @@ class DashboardRenderer:
                         import random as random_module
                         new_index = random_module.choice(available_indices)
 
-                st.session_state.current_ai_suggestion = all_ai_suggestions[new_index]
-                st.session_state.last_suggestion_index = new_index
+                st_module.session_state.current_ai_suggestion = all_ai_suggestions[new_index]
+                st_module.session_state.last_suggestion_index = new_index
             elif all_ai_suggestions: # Only one suggestion available
-                 st.session_state.current_ai_suggestion = all_ai_suggestions[0]
-                 st.session_state.last_suggestion_index = 0
+                 st_module.session_state.current_ai_suggestion = all_ai_suggestions[0]
+                 st_module.session_state.last_suggestion_index = 0
             else:
-                st.session_state.current_ai_suggestion = "No new insights available at the moment. Data might be insufficient."
-                st.session_state.last_suggestion_index = -1
+                st_module.session_state.current_ai_suggestion = "No new insights available at the moment. Data might be insufficient."
+                st_module.session_state.last_suggestion_index = -1
             
-            if st_module:
-                st_module.rerun()
-            else: # Fallback
-                import streamlit as st
-                st.rerun()
+            # No explicit st.rerun() needed here.
+            # Streamlit automatically re-renders the page after a button click.
+            # The change in st.session_state.current_ai_suggestion will be picked up.
 
     def _render_charts(self, df, st_module=None, pd_module=None, px_module=None):
         """Renders the various charts for the dashboard."""
@@ -115,7 +115,7 @@ class DashboardRenderer:
             st_module.info("No data available to display charts.")
             return
 
-        col1, col2 = st.columns(2)
+        col1, col2 = st_module.columns(2)
 
         # --- Chart 1: Service Counts (Bar Chart) ---
         with col1:
@@ -134,7 +134,7 @@ class DashboardRenderer:
             st_module.subheader("Hourly Visits Heatmap")
             st_module.dataframe(pivot.style.format("{:.0f}").background_gradient(cmap='BuGn'), height=400)
 
-        col3, col4 = st.columns(2)
+        col3, col4 = st_module.columns(2)
 
         # --- Chart 3: Revenue Breakdown (Pie Chart) ---
         with col3:
