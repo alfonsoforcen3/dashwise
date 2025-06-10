@@ -1,8 +1,3 @@
-import streamlit as st
-import pandas as pd
-import io
-import random
-from datetime import datetime, timedelta
 
 class DataHandler:
     """
@@ -16,26 +11,29 @@ class DataHandler:
         Returns:
             An uploaded file object (from Streamlit uploader) or an in-memory BytesIO buffer (for demo data).
         """
+        # streamlit, io, random, datetime, timedelta, pd are now expected to be imported in the main app
+        # and thus available in the global scope when these methods are called.
+        # This is generally not a recommended practice for larger applications.
         st.sidebar.subheader("📁 Upload your data")
         uploaded_file = st.sidebar.file_uploader("Upload your Excel file", type=["xlsx"], key="upload_gym")
 
         if st.sidebar.button("✨ Use Demo Data", key="demo_gym"):
-            demo_buf = self._create_demo_data()
+            demo_buf = self._create_demo_data(datetime, timedelta, random, pd, io)
             st.session_state['demo_data_buffer'] = demo_buf
             st.session_state['use_demo_data'] = True
             st.success("✅ Realistic demo data loaded successfully")
-
-        self._create_template()
+        self._create_template(datetime, pd, io)
 
         if st.session_state.get('use_demo_data'):
             return st.session_state.get('demo_data_buffer')
 
         return uploaded_file
 
-    def _create_demo_data(self):
+    # Pass necessary modules as arguments if they are no longer imported directly
+    def _create_demo_data(self, datetime_module, timedelta_module, random_module, pd_module, io_module):
         """Creates a realistic in-memory demo DataFrame and returns it as a BytesIO buffer."""
         num_days = 30
-        base_date = datetime.now() - timedelta(days=num_days)
+        base_date = datetime_module.now() - timedelta_module(days=num_days)
         records = []
 
         for i in range(num_days):
@@ -43,51 +41,51 @@ class DataHandler:
             weekday = current_date.weekday()
             for hour in range(6, 22):
                 if weekday < 5:  # Weekdays
-                    if 6 <= hour < 7: visitors = random.randint(5, 15)
-                    elif 7 <= hour < 10: visitors = random.randint(60, 80)
-                    elif 10 <= hour < 13: visitors = random.randint(25, 40)
-                    elif 13 <= hour < 17: visitors = random.randint(40, 60)
-                    elif 17 <= hour < 20: visitors = random.randint(70, 95)
-                    else: visitors = random.randint(25, 45)
+                    if 6 <= hour < 7: visitors = random_module.randint(5, 15)
+                    elif 7 <= hour < 10: visitors = random_module.randint(60, 80)
+                    elif 10 <= hour < 13: visitors = random_module.randint(25, 40)
+                    elif 13 <= hour < 17: visitors = random_module.randint(40, 60)
+                    elif 17 <= hour < 20: visitors = random_module.randint(70, 95)
+                    else: visitors = random_module.randint(25, 45)
                 elif weekday == 5: # Saturday
-                    if 6 <= hour < 8: visitors = random.randint(5, 15)
-                    elif 8 <= hour < 12: visitors = random.randint(45, 70)
-                    elif 12 <= hour < 17: visitors = random.randint(50, 75)
-                    elif 17 <= hour < 19: visitors = random.randint(15, 30)
-                    else: visitors = random.randint(3, 10)
+                    if 6 <= hour < 8: visitors = random_module.randint(5, 15)
+                    elif 8 <= hour < 12: visitors = random_module.randint(45, 70)
+                    elif 12 <= hour < 17: visitors = random_module.randint(50, 75)
+                    elif 17 <= hour < 19: visitors = random_module.randint(15, 30)
+                    else: visitors = random_module.randint(3, 10)
                 else: # Sunday
-                    if 6 <= hour < 8: visitors = random.randint(5, 10)
-                    elif 8 <= hour < 13: visitors = random.randint(55, 80)
-                    elif 13 <= hour < 18: visitors = random.randint(45, 65)
-                    elif 18 <= hour < 20: visitors = random.randint(20, 35)
-                    else: visitors = random.randint(10, 20)
+                    if 6 <= hour < 8: visitors = random_module.randint(5, 10)
+                    elif 8 <= hour < 13: visitors = random_module.randint(55, 80)
+                    elif 13 <= hour < 18: visitors = random_module.randint(45, 65)
+                    elif 18 <= hour < 20: visitors = random_module.randint(20, 35)
+                    else: visitors = random_module.randint(10, 20)
 
                 for _ in range(visitors):
-                    client_id = random.randint(1000, 3000)
-                    service = random.choices(
+                    client_id = random_module.randint(1000, 3000)
+                    service = random_module.choices(
                         ['Workout', 'Yoga', 'CrossFit', 'Zumba', 'Personal Training', 'Pilates'],
                         weights=[70, 8, 8, 4, 6, 4], k=1
                     )[0]
-                    membership = random.choices(['Standard', 'Premium', 'Pay-as-you-go'], [6, 3, 1])[0]
+                    membership = random_module.choices(['Standard', 'Premium', 'Pay-as-you-go'], [6, 3, 1])[0]
 
                     if service == 'Personal Training':
-                        revenue = random.uniform(60, 85)
+                        revenue = random_module.uniform(60, 85)
                     else:
                         revenue = 30 if membership == 'Standard' else 45 if membership == 'Premium' else 18
 
-                    add_on = random.choices([0, 3, 5, 8], weights=[55, 20, 15, 10])[0]
-                    supp = random.choices([0, 2, 4, 6], weights=[60, 25, 10, 5])[0]
+                    add_on = random_module.choices([0, 3, 5, 8], weights=[55, 20, 15, 10])[0]
+                    supp = random_module.choices([0, 2, 4, 6], weights=[60, 25, 10, 5])[0]
 
                     if service == 'Personal Training':
-                        session_cost = random.uniform(25, 40)
+                        session_cost = random_module.uniform(25, 40)
                     elif service in ['CrossFit']:
-                        session_cost = random.uniform(15, 25)
+                        session_cost = random_module.uniform(15, 25)
                     elif service in ['Yoga', 'Zumba', 'Pilates']:
-                        session_cost = random.uniform(10, 18)
+                        session_cost = random_module.uniform(10, 18)
                     elif service == 'Workout':
-                        session_cost = random.uniform(5, 10)
+                        session_cost = random_module.uniform(5, 10)
                     else:
-                        session_cost = random.uniform(8, 15)
+                        session_cost = random_module.uniform(8, 15)
 
                     profit = revenue - session_cost
 
@@ -103,13 +101,14 @@ class DataHandler:
                         'Profit (€)': round(profit, 2)
                     })
 
-        df_demo = pd.DataFrame(records)
-        demo_buf = io.BytesIO()
-        with pd.ExcelWriter(demo_buf, engine='xlsxwriter') as writer:
-            df_demo.to_excel(writer, index=False)
+        df_demo = pd_module.DataFrame(records)
+        demo_buf = io_module.BytesIO()
+        with pd_module.ExcelWriter(demo_buf, engine='xlsxwriter') as writer:
+            df_demo.to_excel(writer, sheet_name='Sheet1', index=False) # Added sheet_name for clarity
         demo_buf.seek(0)
 
         # Download button for generated demo data (appears only if demo data is used)
+        # st will be available from the main app's import
         if 'demo_data_buffer' in st.session_state and st.session_state.get('use_demo_data', False):
              st.sidebar.download_button(
                 label="📥 Download Current Demo Data",
@@ -121,10 +120,10 @@ class DataHandler:
 
         return demo_buf
 
-    def _create_template(self):
+    def _create_template(self, datetime_module, pd_module, io_module):
         """Creates a sample DataFrame for the template and provides a download button."""
-        df_template = pd.DataFrame({
-            'Date': [datetime.now()],
+        df_template = pd_module.DataFrame({
+            'Date': [datetime_module.now()],
             'Client ID': [1234],
             'Service': ['Workout'],
             'Revenue': [30.0],
@@ -134,11 +133,12 @@ class DataHandler:
             'Session Cost (€)': [7.50],
             'Profit (€)': [22.50]
         })
-        template_buf = io.BytesIO()
-        with pd.ExcelWriter(template_buf, engine='xlsxwriter') as writer:
-            df_template.to_excel(writer, index=False)
+        template_buf = io_module.BytesIO()
+        with pd_module.ExcelWriter(template_buf, engine='xlsxwriter') as writer:
+            df_template.to_excel(writer, sheet_name='Sheet1', index=False) # Added sheet_name
         template_buf.seek(0)
 
+        # st will be available from the main app's import
         st.sidebar.download_button(
             label="⬇️ Download Template",
             data=template_buf,
@@ -146,7 +146,7 @@ class DataHandler:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-    def load_data(self, file_object):
+    def load_data(self, file_object, pd_module=None): # pd_module for consistency, though could be global
         """
         Loads data from a file-like object (uploaded file or BytesIO buffer)
         into a Pandas DataFrame.
@@ -155,8 +155,11 @@ class DataHandler:
         Returns:
             A Pandas DataFrame if successful, None otherwise.
         """
+        if pd_module is None: # Fallback if not passed, relying on global import from main
+            import pandas as pd_module
         try:
-            return pd.read_excel(file_object, sheet_name=0, engine='openpyxl')
+            return pd_module.read_excel(file_object, sheet_name=0, engine='openpyxl')
         except Exception as e:
+            # st will be available from the main app's import
             st.error(f"❌ Failed to load Excel file: {e}")
             return None

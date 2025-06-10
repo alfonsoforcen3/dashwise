@@ -1,11 +1,10 @@
-import pandas as pd
 
 class DataProcessor:
     """
     Handles data preprocessing and calculation of key metrics
     for the dashboard and AI insights.
     """
-    def process_and_calculate_metrics(self, df):
+    def process_and_calculate_metrics(self, df, pd_module=None): # pd_module for consistency
         """
         Performs data preprocessing and calculates metrics.
         Args:
@@ -14,10 +13,12 @@ class DataProcessor:
             A tuple containing the processed DataFrame and a dictionary of metrics,
             or (None, None) if processing fails.
         """
+        if pd_module is None: # Fallback if not passed
+            import pandas as pd_module
         try:
             # --- Data Preprocessing ---
-            df['Date'] = pd.to_datetime(df['Date'])
-            df['Day'] = df['Date'].dt.day_name()
+            df['Date'] = pd_module.to_datetime(df['Date'])
+            df['Day'] = df['Date'].dt.day_name() # .dt accessor works on pandas Series
             df['Hour'] = df['Date'].dt.hour
             # Ensure 'Profit (€)' column exists, calculate if not
             if 'Profit (€)' not in df.columns:

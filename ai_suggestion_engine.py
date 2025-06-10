@@ -1,5 +1,3 @@
-import random
-
 class AISuggestionEngine:
     """
     Generates AI-like strategic suggestions based on calculated metrics.
