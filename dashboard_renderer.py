@@ -64,7 +64,7 @@ class DashboardRenderer:
                     {st.session_state.current_ai_suggestion}
                 </div>
             </div>
-        """, unsafe_allow_html=True)
+        """
         
         if st_module:
             st_module.markdown(st_markdown_content, unsafe_allow_html=True)
